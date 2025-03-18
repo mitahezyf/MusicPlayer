@@ -23,6 +23,7 @@ class MusicPlayer(private val context: Context) {
         exoPlayer?.release()
         exoPlayer = null
     }
+
     fun pause() {
         exoPlayer?.pause()
     }
@@ -37,4 +38,7 @@ class MusicPlayer(private val context: Context) {
         } ?: 0f
     }
 
+    fun setLooping(isLooping: Boolean) {
+        exoPlayer?.repeatMode = if (isLooping) ExoPlayer.REPEAT_MODE_ONE else ExoPlayer.REPEAT_MODE_OFF
+    }
 }

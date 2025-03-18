@@ -3,7 +3,7 @@ package com.example.musicplayer
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+
 
 @Composable
 fun MusicNavigation(navController: androidx.navigation.NavHostController, viewModel: MusicViewModel) {
@@ -12,7 +12,7 @@ fun MusicNavigation(navController: androidx.navigation.NavHostController, viewMo
             MusicScreen(navController, viewModel)
         }
         composable("player") {
-            PlayerScreen(viewModel) { navController.popBackStack() }
+            PlayerScreen(viewModel)
         }
     }
 }
