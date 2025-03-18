@@ -58,15 +58,6 @@ fun PlayerScreen(viewModel: MusicViewModel, onBack: () -> Unit) {
                 Button(onClick = { viewModel.togglePlayPause() }) {
                     Text(if (isPlaying) "Pauza" else "Odtwarzaj")
                 }
-
-                Button(onClick = { /*TODO*/ }) {
-                    Text(if (isPlaying) "Pauza" else "Odtwarzaj")
-                }
-
-
-
-
-
             }
         }
     }

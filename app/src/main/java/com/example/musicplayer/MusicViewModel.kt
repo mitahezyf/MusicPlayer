@@ -79,7 +79,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _progress.value = musicPlayer.getProgress()
     }
 
-
     override fun onCleared() {
         super.onCleared()
         musicPlayer.releasePlayer()
