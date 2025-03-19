@@ -40,14 +40,27 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _isShuffling = MutableStateFlow(false)
     val isShuffling = _isShuffling.asStateFlow()
 
-    private val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private val permissions =
         arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO)
-    } else {
-        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
 
     private val _hasPermission = MutableStateFlow(checkPermissions())
     val hasPermission = _hasPermission.asStateFlow()
+
+    private val _timerDuration = MutableStateFlow(0L) // Czas w sekundach
+    val timerDuration = _timerDuration.asStateFlow()
+
+    private val _timerActive = MutableStateFlow(false)
+    val timerActive = _timerActive.asStateFlow()
+
+    private val _currentSongTitle = MutableStateFlow<String>("Unknown Title")
+    val currentSongTitle = _currentSongTitle.asStateFlow()
+
+    private val _currentArtist = MutableStateFlow<String>("Unknown Artist")
+    val currentArtist = _currentArtist.asStateFlow()
+
+    private val _currentDuration = MutableStateFlow<Long>(0)
+    val currentDuration = _currentDuration.asStateFlow()
+
 
     init {
         if (_hasPermission.value) {
@@ -62,6 +75,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
     }
+
 
     fun loadMusicFiles() {
         viewModelScope.launch {
@@ -80,13 +94,19 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _isPlaying.value = true
     }
 
-    fun playMusicAtIndex(index: Int) {
+    private fun playMusicAtIndex(index: Int) {
         if (index in _musicFiles.value.indices) {
             _currentIndex.value = index
             val file = _musicFiles.value[index]
-            _currentSong.value = file.fileName
-                // Pobranie okładki
+
+            // Ustawienie tytułu, wykonawcy i czasu trwania
+            _currentSongTitle.value = file.title.toString()
+            _currentArtist.value = file.artist ?: "Unknown Artist"
+            _currentDuration.value = file.duration
+
+            // Pobranie okładki
             _currentAlbumArt.value = musicScanner.getAlbumArt(file.filePath)
+
             musicPlayer.playMusic(file.filePath)
             _isPlaying.value = true
         }
@@ -133,12 +153,33 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         musicPlayer.setLooping(_isLooping.value)
     }
 
-    fun toggleShuffle() {
-        _isShuffling.value = !_isShuffling.value
-    }
 
     override fun onCleared() {
         super.onCleared()
         musicPlayer.releasePlayer()
     }
+    fun setTimer(durationInSeconds: Long) {
+        _timerDuration.value = durationInSeconds
+        _timerActive.value = true
+        startTimer()
+    }
+
+    // Funkcja, która odlicza czas
+    private fun startTimer() {
+        viewModelScope.launch {
+            delay(_timerDuration.value * 1000) // Czekaj przez określony czas
+            if (_timerActive.value) {
+                musicPlayer.pause() // Zatrzymaj odtwarzanie
+                _isPlaying.value = false
+            }
+        }
+    }
+    fun toggleShuffle() {
+        _isShuffling.value = !_isShuffling.value
+    }
+    fun updateProgress(progress: Float) {
+        _progress.value = progress // Assuming _progress is a mutable state or LiveData
+    }
+
+
 }

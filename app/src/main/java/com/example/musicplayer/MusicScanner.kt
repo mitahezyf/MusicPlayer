@@ -9,6 +9,7 @@ import android.media.MediaMetadataRetriever
 
 class MusicScanner(private val context: Context) {
 
+    // Funkcja zwracająca listę plików muzycznych
     fun getMusicFiles(): List<MusicFile> {
         val musicFiles = mutableListOf<MusicFile>()
 
@@ -16,6 +17,7 @@ class MusicScanner(private val context: Context) {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.ARTIST
@@ -32,6 +34,7 @@ class MusicScanner(private val context: Context) {
         cursor?.use {
             val idColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val dataColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+            val titleColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val nameColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
             val albumColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val artistColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
@@ -39,18 +42,37 @@ class MusicScanner(private val context: Context) {
             while (it.moveToNext()) {
                 val id = it.getLong(idColumn)
                 val data = it.getString(dataColumn)
+                val title = it.getString(titleColumn)
                 val name = it.getString(nameColumn)
                 val album = it.getString(albumColumn)
                 val artist = it.getString(artistColumn)
 
-                // Utwórz obiekt MusicFile i dodaj go do listy.
-                val musicFile = MusicFile(id, data, name, album, artist)
+                // Uzyskiwanie czasu trwania utworu
+                val duration = getDuration(data)
+
+                // Tworzenie obiektu MusicFile z przekazaniem duration
+                val musicFile = MusicFile(id, data, title, name, album, artist, duration)
                 musicFiles.add(musicFile)
             }
         }
         return musicFiles
     }
 
+    // Funkcja pobierająca czas trwania utworu w milisekundach
+    private fun getDuration(filePath: String): Long {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(filePath)
+            val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            time?.toLong() ?: 0L // Zwraca czas trwania w milisekundach
+        } catch (e: Exception) {
+            0L
+        } finally {
+            retriever.release()
+        }
+    }
+
+    // Funkcja pobierająca okładkę albumu z pliku muzycznego
     fun getAlbumArt(filePath: String): Bitmap? {
         val retriever = MediaMetadataRetriever()
         return try {
