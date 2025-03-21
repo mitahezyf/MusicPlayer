@@ -1,29 +1,31 @@
 package com.example.musicplayer
 
+import android.annotation.SuppressLint
 import android.app.Application
-import android.content.pm.PackageManager
+import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
-import android.os.Build
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class MusicViewModel(application: Application) : AndroidViewModel(application) {
+
+    @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
     private val musicScanner = MusicScanner(context)
     private val musicPlayer = MusicPlayer(context)
+    private val sharedPreferences: SharedPreferences =
+        application.getSharedPreferences("music_prefs", Context.MODE_PRIVATE)
 
     private val _musicFiles = MutableStateFlow<List<MusicFile>>(emptyList())
     val musicFiles = _musicFiles.asStateFlow()
 
     private val _currentIndex = MutableStateFlow(-1)
-    val currentIndex = _currentIndex.asStateFlow()
-
-    private val _currentSong = MutableStateFlow<String?>(null)
-    val currentSong = _currentSong.asStateFlow()
+//    val currentIndex = _currentIndex.asStateFlow()
 
     private val _currentAlbumArt = MutableStateFlow<Bitmap?>(null)
     val currentAlbumArt = _currentAlbumArt.asStateFlow()
@@ -34,152 +36,211 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _progress = MutableStateFlow(0f)
     val progress = _progress.asStateFlow()
 
-    private val _isLooping = MutableStateFlow(false)
-    val isLooping = _isLooping.asStateFlow()
+//    private val _isLooping = MutableStateFlow(false)
+//    val isLooping = _isLooping.asStateFlow()
 
     private val _isShuffling = MutableStateFlow(false)
     val isShuffling = _isShuffling.asStateFlow()
 
-    private val permissions =
-        arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO)
-
-    private val _hasPermission = MutableStateFlow(checkPermissions())
-    val hasPermission = _hasPermission.asStateFlow()
-
-    private val _timerDuration = MutableStateFlow(0L) // Czas w sekundach
-    val timerDuration = _timerDuration.asStateFlow()
+    private val _timerDuration = MutableStateFlow(0L)
+//    val timerDuration = _timerDuration.asStateFlow()
 
     private val _timerActive = MutableStateFlow(false)
     val timerActive = _timerActive.asStateFlow()
 
-    private val _currentSongTitle = MutableStateFlow<String>("Unknown Title")
+    private val _currentSongTitle = MutableStateFlow("Unknown Title")
     val currentSongTitle = _currentSongTitle.asStateFlow()
 
-    private val _currentArtist = MutableStateFlow<String>("Unknown Artist")
+    private val _currentArtist = MutableStateFlow("Unknown Artist")
     val currentArtist = _currentArtist.asStateFlow()
 
-    private val _currentDuration = MutableStateFlow<Long>(0)
+    private val _currentDuration = MutableStateFlow(0L)
     val currentDuration = _currentDuration.asStateFlow()
 
-
     init {
-        if (_hasPermission.value) {
-            loadMusicFiles()
-        }
+        loadMusicFiles()
         musicPlayer.initializePlayer()
         startProgressUpdater()
+        musicPlayer.setOnCompletionListener { skipToNext() }
     }
 
-    private fun checkPermissions(): Boolean {
-        return permissions.all {
-            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
+//    private fun checkPermissions(): Boolean {
+//        return arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO).all {
+//            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+//        }
+//    }
 
     fun loadMusicFiles() {
         viewModelScope.launch {
             val files = musicScanner.getMusicFiles()
             _musicFiles.value = files
-            if (files.isNotEmpty()) {
-                    // Odtwarza pierwszy utwór po załadowaniu plików
-                playMusicAtIndex(0)
+            if (files.isNotEmpty()) restoreLastPlayedSong() else resetUIState()
+        }
+    }
+
+    private fun resetUIState() {
+        _currentIndex.value = -1
+        _currentSongTitle.value = "Unknown Title"
+        _currentArtist.value = "Unknown Artist"
+        _currentDuration.value = 0
+        _currentAlbumArt.value = null
+    }
+
+    fun playMusic(filePath: String) {
+        _musicFiles.value.find { it.filePath == filePath }?.let { file ->
+            updateCurrentSongInfo(file)
+            musicPlayer.prepare(filePath) {
+                musicPlayer.play()
+                _isPlaying.value = true
+                saveLastPlayedSong()
             }
         }
     }
 
-    fun playMusic(filePath: String) {
-        _currentSong.value = filePath
-        musicPlayer.playMusic(filePath)
-        _isPlaying.value = true
+    private fun updateCurrentSongInfo(file: MusicFile) {
+        _currentIndex.value = _musicFiles.value.indexOf(file)
+        _currentSongTitle.value = file.title
+        _currentArtist.value = file.artist ?: "Unknown Artist"
+        _currentDuration.value = file.duration
+        _currentAlbumArt.value = musicScanner.getAlbumArt(file.filePath)
     }
 
-    private fun playMusicAtIndex(index: Int) {
-        if (index in _musicFiles.value.indices) {
-            _currentIndex.value = index
-            val file = _musicFiles.value[index]
-
-            // Ustawienie tytułu, wykonawcy i czasu trwania
-            _currentSongTitle.value = file.title.toString()
-            _currentArtist.value = file.artist ?: "Unknown Artist"
-            _currentDuration.value = file.duration
-
-            // Pobranie okładki
-            _currentAlbumArt.value = musicScanner.getAlbumArt(file.filePath)
-
-            musicPlayer.playMusic(file.filePath)
-            _isPlaying.value = true
+    private fun startProgressUpdater() {
+        viewModelScope.launch {
+            while (true) {
+                val duration = musicPlayer.getDuration()
+                val position = musicPlayer.getCurrentPosition()
+                if (duration > 0 && position >= 0) {
+                    _progress.value = position.toFloat() / duration
+                    _currentDuration.value = duration
+                }
+                delay(500)
+            }
         }
     }
 
     fun togglePlayPause() {
         if (_isPlaying.value) {
             musicPlayer.pause()
+            saveLastPlayedSong()
         } else {
-            musicPlayer.resume()
+            musicPlayer.play()
         }
         _isPlaying.value = !_isPlaying.value
     }
 
-    private fun startProgressUpdater() {
-        viewModelScope.launch {
-            while (true) {
-                _progress.value = musicPlayer.getProgress()
-                delay(1000) // Aktualizacja co 1s
-            }
-        }
-    }
-
     fun skipToNext() {
-        val nextIndex = if (_isShuffling.value) {
-            (0 until _musicFiles.value.size).random()
-        } else {
-            (_currentIndex.value + 1) % _musicFiles.value.size
+        if (_musicFiles.value.isEmpty()) return
+
+        val nextIndex = when {
+            _isShuffling.value -> (0 until _musicFiles.value.size).random()
+            else -> (_currentIndex.value + 1).let {
+                if (it >= _musicFiles.value.size) 0 else it
+            }
         }
         playMusicAtIndex(nextIndex)
     }
 
     fun skipToPrevious() {
-        if (musicPlayer.getProgress() < 0.05f) {
-            val prevIndex = if (_currentIndex.value > 0) _currentIndex.value - 1 else _musicFiles.value.lastIndex
+        if (musicPlayer.getCurrentPosition() < 3000) {
+            val prevIndex = if (_currentIndex.value > 0) {
+                _currentIndex.value - 1
+            } else {
+                _musicFiles.value.lastIndex
+            }
             playMusicAtIndex(prevIndex)
         } else {
-            musicPlayer.playMusic(_musicFiles.value[_currentIndex.value].filePath)
+            musicPlayer.seekTo(0)
         }
     }
 
-    fun toggleLooping() {
-        _isLooping.value = !_isLooping.value
-        musicPlayer.setLooping(_isLooping.value)
+    private fun playMusicAtIndex(index: Int) {
+        if (index in _musicFiles.value.indices) {
+            val file = _musicFiles.value[index]
+            updateCurrentSongInfo(file)
+            musicPlayer.prepare(file.filePath) {
+                musicPlayer.play()
+                _isPlaying.value = true
+                saveLastPlayedSong()
+            }
+        }
     }
 
+//    fun toggleLooping() {
+//        _isLooping.value = !_isLooping.value
+//        musicPlayer.setLooping(_isLooping.value)
+//    }
 
     override fun onCleared() {
-        super.onCleared()
+        saveLastPlayedSong()
         musicPlayer.releasePlayer()
+        super.onCleared()
     }
+
+//    fun seekTo(progress: Float) {
+//        val duration = musicPlayer.getDuration()
+//        if (duration > 0) {
+//            val newPosition = (progress * duration).toLong()
+//            musicPlayer.seekTo(newPosition)
+//        }
+//    }
+
     fun setTimer(durationInSeconds: Long) {
         _timerDuration.value = durationInSeconds
         _timerActive.value = true
         startTimer()
     }
 
-    // Funkcja, która odlicza czas
     private fun startTimer() {
         viewModelScope.launch {
-            delay(_timerDuration.value * 1000) // Czekaj przez określony czas
+            delay(_timerDuration.value * 1000)
             if (_timerActive.value) {
-                musicPlayer.pause() // Zatrzymaj odtwarzanie
+                musicPlayer.pause()
                 _isPlaying.value = false
+                _timerActive.value = false
             }
         }
     }
+
     fun toggleShuffle() {
         _isShuffling.value = !_isShuffling.value
     }
-    fun updateProgress(progress: Float) {
-        _progress.value = progress // Assuming _progress is a mutable state or LiveData
+
+    fun seekTo(progress: Float) {
+        val duration = musicPlayer.getDuration()
+        if (duration > 0) {
+            val newPosition = (progress * duration).toLong()
+            musicPlayer.seekTo(newPosition)
+        }
     }
 
+    private fun saveLastPlayedSong() {
+        _currentIndex.value.takeIf { it != -1 }?.let { index ->
+            sharedPreferences.edit().apply {
+                putString("last_song", _musicFiles.value[index].filePath)
+                putLong("last_position", musicPlayer.getCurrentPosition())
+                apply()
+            }
+        }
+    }
+
+    private fun restoreLastPlayedSong() {
+        val lastSongPath = sharedPreferences.getString("last_song", null)
+        val lastPosition = sharedPreferences.getLong("last_position", 0L)
+
+        lastSongPath?.let { path ->
+            _musicFiles.value.indexOfFirst { it.filePath == path }.takeIf { it != -1 }?.let { index ->
+                _currentIndex.value = index
+                val file = _musicFiles.value[index]
+                updateCurrentSongInfo(file)
+
+                musicPlayer.prepare(path) {
+                    musicPlayer.seekTo(lastPosition)
+                    musicPlayer.pause()
+                    _isPlaying.value = false
+                }
+            }
+        }
+    }
 
 }

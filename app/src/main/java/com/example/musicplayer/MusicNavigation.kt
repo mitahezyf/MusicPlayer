@@ -3,7 +3,7 @@ package com.example.musicplayer
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.musicplayer.PlayerScreen
+
 
 
 
@@ -14,7 +14,8 @@ fun MusicNavigation(navController: androidx.navigation.NavHostController, viewMo
             MusicScreen(navController, viewModel)
         }
         composable("player") {
-            PlayerScreen(viewModel)
+            PlayerScreen(viewModel, navController)
         }
     }
 }
+

@@ -1,65 +1,73 @@
 package com.example.musicplayer
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.ShuffleOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SkipPrevious
-
-
-
-
-import androidx.compose.material.icons.filled.*
-
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import java.util.Locale
 
 
 @Composable
-fun PlayerScreen(viewModel: MusicViewModel) {
+fun PlayerScreen(viewModel: MusicViewModel, navController: NavController) {
 
+    val context = LocalContext.current
 
-
-
-
-    val albumArt by viewModel.currentAlbumArt.collectAsState()
     val isShuffling by viewModel.isShuffling.collectAsState()
     val timerActive by viewModel.timerActive.collectAsState()
-
-    val currentSongTitle by viewModel.currentSongTitle.collectAsState()
-    val currentArtist by viewModel.currentArtist.collectAsState()
 
     val progress by viewModel.progress.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
 
+    val currentSongTitle by viewModel.currentSongTitle.collectAsState()
+    val currentArtist by viewModel.currentArtist.collectAsState()
+    val albumArt by viewModel.currentAlbumArt.collectAsState()
+    val currentDuration by viewModel.currentDuration.collectAsState()
+
     fun formatTime(milliseconds: Long): String {
         val minutes = (milliseconds / 1000) / 60
         val seconds = (milliseconds / 1000) % 60
-        return String.format("%02d:%02d", minutes, seconds)
+        return String.format(Locale.US,"%02d:%02d", minutes, seconds)
     }
 
-    val currentDuration by viewModel.currentDuration.collectAsState()
     val currentTime = formatTime((progress * currentDuration).toLong())
     val totalTime = formatTime(currentDuration)
-
-
-
 
     Column(
         modifier = Modifier
@@ -69,34 +77,42 @@ fun PlayerScreen(viewModel: MusicViewModel) {
 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 15.dp, start = 5.dp, end = 5.dp),
+                .padding(top = 15.dp, start = 15.dp, end = 15.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Minimalizacja
             IconButton(
-                onClick = { /* TODO: Obsługa minimalizacji*/ },
+                onClick = { navController.popBackStack() },
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(40.dp)
+//                    .background(Color.Red)
             ) {
                 Icon(
                     imageVector = Icons.Default.ExpandMore, // Strzałka w dół
                     contentDescription = "Minimize Player",
                     tint = Color.White,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
             Spacer(modifier = Modifier.weight(1f))
             //Opcje
             IconButton(
-                onClick = { /* TODO: Obsługa opcji */ },
+                onClick = {
+                    Toast.makeText(
+                        context,
+                        "co gagatku, spodziewałeś się że zadziała?",
+                        Toast.LENGTH_SHORT //
+                    ).show()
+                },
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(40.dp)
+//                    .background(Color.Red)
+
             ) {
                 Icon(
                     imageVector = Icons.Rounded.MoreVert,
@@ -132,23 +148,30 @@ fun PlayerScreen(viewModel: MusicViewModel) {
         Spacer(modifier = Modifier.height(20.dp))
 
         //Pasek postępu
+
         Slider(
             value = progress,
-            onValueChange = { viewModel.updateProgress(it) },
+            onValueChange = { newProgress ->
+
+                viewModel.seekTo(newProgress)
+            },
+//            onValueChangeFinished = {/*todo cos dodatkowego na koniec przesowania*/ }
+
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
                 thumbColor = Color.Red,
                 activeTrackColor = Color.Red
             )
         )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "$currentTime", color = Color.Gray)
-            Text(text = "$totalTime", color = Color.Gray)
+            Text(text = currentTime, color = Color.Gray)
+            Text(text = totalTime, color = Color.Gray)
         }
 
         //Przyciski sterowania
@@ -229,7 +252,7 @@ fun PlayerScreen(viewModel: MusicViewModel) {
         // Timer Active Status
         if (timerActive) {
             Text(
-                text = "Timer is active. Playback will stop when time is up.",
+                text = "Wyłącznik czasowy ustawiony(3 minuty)",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(16.dp)

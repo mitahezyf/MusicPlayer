@@ -2,25 +2,26 @@ package com.example.musicplayer
 
 import android.content.Context
 import android.database.Cursor
-import android.provider.MediaStore
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.provider.MediaStore
 
 class MusicScanner(private val context: Context) {
 
-    // Funkcja zwracająca listę plików muzycznych
+
     fun getMusicFiles(): List<MusicFile> {
+
         val musicFiles = mutableListOf<MusicFile>()
 
-        // Zapytanie MediaStore o pliki audio
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.ARTIST
+            MediaStore.Audio.Media.ARTIST,
+
         )
 
         val cursor: Cursor? = context.contentResolver.query(
@@ -46,11 +47,9 @@ class MusicScanner(private val context: Context) {
                 val name = it.getString(nameColumn)
                 val album = it.getString(albumColumn)
                 val artist = it.getString(artistColumn)
-
-                // Uzyskiwanie czasu trwania utworu
                 val duration = getDuration(data)
 
-                // Tworzenie obiektu MusicFile z przekazaniem duration
+
                 val musicFile = MusicFile(id, data, title, name, album, artist, duration)
                 musicFiles.add(musicFile)
             }
@@ -64,7 +63,7 @@ class MusicScanner(private val context: Context) {
         return try {
             retriever.setDataSource(filePath)
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            time?.toLong() ?: 0L // Zwraca czas trwania w milisekundach
+            time?.toLong() ?: 0L
         } catch (e: Exception) {
             0L
         } finally {

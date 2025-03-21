@@ -7,6 +7,8 @@ data class MusicFile(
     val fileName: String,
     val album: String?,
     val artist: String?,
+    //val collaborators: String?,
     val duration: Long
+
 )
 
