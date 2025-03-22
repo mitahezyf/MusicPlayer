@@ -31,7 +31,7 @@ class MusicPlayer(private val context: Context) {
 
 
     fun play() {
-        if (isPrepared) {
+        if (exoPlayer != null && isPrepared) {
             exoPlayer?.play()
         }
     }

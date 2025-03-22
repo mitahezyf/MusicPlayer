@@ -83,6 +83,7 @@ navigationCompose = "2.8.9"
 kotlin = "2.0.0"
 
 composeCompiler = "1.6.0"
+junitKtx = "1.2.1"
 
 [libraries]
 # Accompanist
@@ -107,6 +108,7 @@ androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "medi
 # Test
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

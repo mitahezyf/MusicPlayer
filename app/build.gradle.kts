@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
 //    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.junit.ktx)
 
     // Testy
     testImplementation(libs.junit)
