@@ -7,10 +7,12 @@ import android.content.SharedPreferences
 import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -64,17 +66,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         musicPlayer.setOnCompletionListener { skipToNext() }
     }
 
-//    private fun checkPermissions(): Boolean {
-//        return arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO).all {
-//            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-//        }
-//    }
 
     fun loadMusicFiles() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val files = musicScanner.getMusicFiles()
-            _musicFiles.value = files
-            if (files.isNotEmpty()) restoreLastPlayedSong() else resetUIState()
+            withContext(Dispatchers.Main) { // Powrót do głównego wątku dla aktualizacji UI
+                _musicFiles.value = files
+                if (files.isNotEmpty()) restoreLastPlayedSong() else resetUIState()
+            }
         }
     }
 
@@ -106,10 +105,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun startProgressUpdater() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             while (true) {
-                val duration = musicPlayer.getDuration()
-                val position = musicPlayer.getCurrentPosition()
+                val duration = withContext(Dispatchers.Main) { // Przełącz na główny wątek
+                    musicPlayer.getDuration()
+                }
+                val position = withContext(Dispatchers.Main) { // Przełącz na główny wątek
+                    musicPlayer.getCurrentPosition()
+                }
                 if (duration > 0 && position >= 0) {
                     _progress.value = position.toFloat() / duration
                     _currentDuration.value = duration

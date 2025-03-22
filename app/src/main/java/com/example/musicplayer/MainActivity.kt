@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +37,7 @@ class MainActivity : ComponentActivity() {
                         permission
                     ) == PackageManager.PERMISSION_GRANTED -> {
                         viewModel.loadMusicFiles()
-                        delay(500)
+
                     }
                     else -> {
                         permissionLauncher.launch(permission)

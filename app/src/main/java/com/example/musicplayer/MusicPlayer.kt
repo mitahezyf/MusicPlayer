@@ -2,6 +2,7 @@ package com.example.musicplayer
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Looper
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -69,11 +70,24 @@ class MusicPlayer(private val context: Context) {
         }
     }
 
-    fun getCurrentPosition(): Long = exoPlayer?.currentPosition ?: 0L
-    fun getDuration(): Long = exoPlayer?.duration ?: 0L
+    fun getDuration(): Long {
+        checkMainThread() // Dodaj sprawdzenie wątku
+        return exoPlayer?.duration ?: 0L
+    }
+
+    fun getCurrentPosition(): Long {
+        checkMainThread() // Dodaj sprawdzenie wątku
+        return exoPlayer?.currentPosition ?: 0L
+    }
 
     fun seekTo(position: Long) {
         exoPlayer?.seekTo(position.coerceAtLeast(0))
+    }
+
+    private fun checkMainThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw IllegalStateException("Metoda musi być wywołana na głównym wątku!")
+        }
     }
 
 //    fun playMusic(filePath: String) {
