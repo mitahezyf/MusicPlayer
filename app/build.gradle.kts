@@ -41,7 +41,6 @@ android {
         kotlinCompilerExtensionVersion = "1.6.0" // Dodane dla Compose
     }
 }
-
 dependencies {
     // Podstawowe biblioteki AndroidX
     implementation(libs.androidx.core.ktx)
@@ -49,46 +48,91 @@ dependencies {
     implementation(libs.androidx.activity.compose)
 
     // Jetpack Compose
-    implementation(platform(libs.androidx.compose.bom))
-//    implementation(libs.androidx.ui)
-//    implementation(libs.androidx.ui.graphics)
-//    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+    implementation(platform(libs.compose.bom.v20240200)) // Jedyna deklaracja BOM
+    implementation(libs.material3)
+    implementation(libs.foundation)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.material.icons.extended)
+    implementation(libs.androidx.navigation.compose.v277)
 
     // ExoPlayer
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
 
     // Uprawnienia (do dostępu do plików)
-    implementation(libs.accompanist.permissions)
-//    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.junit.ktx)
+    implementation(libs.accompanist.permissions.v0340)
 
     // Testy
     testImplementation(libs.junit)
-//    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-//    androidTestImplementation(libs.androidx.ui.test.junit4)
-//    debugImplementation(libs.androidx.ui.tooling)
-//    debugImplementation(libs.androidx.ui.test.manifest)
-//    implementation(libs.androidx.material.icons.extended)
+    androidTestImplementation(platform(libs.compose.bom.v20240200))
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    // ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v270)
+
+    implementation(libs.accompanist.systemuicontroller)
 
 
-//    implementation(libs.activity.compose.v182)
-//    implementation(libs.androidx.ui.v161)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-//    implementation(libs.androidx.hilt.navigation.compose)
-
-//    implementation(libs.androidx.activity.compose.v180)
-
-//    implementation(libs.androidx.media3.exoplayer.v120)
-//    implementation(libs.androidx.media3.ui.v120)
-
-//    implementation(libs.material3)
-
-    //implementation platform("androidx.compose:compose-bom:2025.03.00") // Użyj swojej wersji BOM
-    implementation(libs.androidx.material.icons.extended)
 }
+//dependencies {
+//    // Podstawowe biblioteki AndroidX
+//    implementation(libs.androidx.core.ktx)
+//    implementation(libs.androidx.lifecycle.runtime.ktx)
+//    implementation(libs.androidx.activity.compose)
+//
+//    // Jetpack Compose
+//    implementation(platform(libs.androidx.compose.bom))
+////    implementation(libs.androidx.ui)
+////    implementation(libs.androidx.ui.graphics)
+////    implementation(libs.androidx.ui.tooling.preview)
+//    implementation(libs.androidx.material3)
+//
+//    // ExoPlayer
+//    implementation(libs.androidx.media3.exoplayer)
+//    implementation(libs.androidx.media3.ui)
+//
+//    // Uprawnienia (do dostępu do plików)
+//    implementation(libs.accompanist.permissions)
+////    implementation(libs.androidx.appcompat)
+//    implementation(libs.androidx.navigation.compose)
+//    implementation(libs.androidx.junit.ktx)
+//
+//    // Testy
+//    testImplementation(libs.junit)
+////    androidTestImplementation(libs.androidx.junit)
+//    androidTestImplementation(libs.androidx.espresso.core)
+//    androidTestImplementation(platform(libs.androidx.compose.bom))
+////    androidTestImplementation(libs.androidx.ui.test.junit4)
+////    debugImplementation(libs.androidx.ui.tooling)
+////    debugImplementation(libs.androidx.ui.test.manifest)
+////    implementation(libs.androidx.material.icons.extended)
+//
+//
+////    implementation(libs.activity.compose.v182)
+////    implementation(libs.androidx.ui.v161)
+//    implementation(libs.androidx.lifecycle.viewmodel.compose)
+//
+////    implementation(libs.androidx.hilt.navigation.compose)
+//
+////    implementation(libs.androidx.activity.compose.v180)
+//
+////    implementation(libs.androidx.media3.exoplayer.v120)
+////    implementation(libs.androidx.media3.ui.v120)
+//
+////    implementation(libs.material3)
+//
+//    //implementation platform("androidx.compose:compose-bom:2025.03.00") // Użyj swojej wersji BOM
+//    implementation(libs.androidx.material.icons.extended)
+//
+//    implementation(libs.androidx.foundation)
+//
+//    implementation(platform("androidx.compose:compose-bom:2024.02.00")) // Aktualizacja BOM
+//    implementation("androidx.compose.material3:material3")
+//    implementation("androidx.compose.foundation:foundation") // Dodaj jawnie foundation
+//    implementation("androidx.compose.ui:ui")
+//    implementation("androidx.compose.material:material-icons-extended")
+//}
